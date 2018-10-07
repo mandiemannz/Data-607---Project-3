@@ -1,0 +1,161 @@
+---
+title: "CUNY MSDS DATA 607 Project 3"
+author: "Amanda Arce"
+date: "October 1, 2018"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: flatly
+    highlight: monochrome
+---
+
+#Project 3
+
+
+## Libraries 
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(tm)
+library(wordcloud)
+library(knitr)
+library(kableExtra)
+library(reshape2)
+library(RSQLite)
+```
+
+
+
+#SQL Database
+
+##Create ephemeral in-memory RSQLite Database
+```{r}
+con <- dbConnect(RSQLite::SQLite(), "ML_Survey.sqlite" ,overwrite =TRUE )
+dbListTables(con)
+```
+
+##Load data from github into R
+```{r}
+df <-  read.csv(file = "https://raw.githubusercontent.com/mandiemannz/Data-607--Fall-18/master/multipleChoiceResponses.csv", header= TRUE)
+```
+
+##Sequence added to dataframe
+```{r}
+# add sequence to the dataframe 
+df<- tibble::rowid_to_column(df, "ID")
+```
+
+```{r}
+col_index <- c(1:15, 38:47,70:82,134,168:172,208:211)
+df2 <- df[,col_index]
+```
+
+```{r}
+dbWriteTable(con,  "MCR_Tb", df2, overwrite= T)
+dbListTables(con)
+```
+
+##Display Database tables
+```{r}
+dbListFields(con, "MCR_Tb")
+```
+
+###Display Database data
+```{r}
+display_cols <- dbReadTable(con, "MCR_Tb")
+
+head(display_cols, 3)
+```
+
+```{r}
+dbDisconnect(con)
+```
+
+
+
+
+
+#Tidy/Clean Data
+
+```{r}
+dataskills <- display_cols
+```
+
+##Create corpus from data
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+review_text <- paste(dataskills, collapse=" ")
+review_source <- VectorSource(review_text)
+corpus <- Corpus(review_source)
+```
+
+
+##Text Mining: 
+
+Use text mining (TM) to extract count of words using a corpus.  Text Mining package also filters out "stop words" - words that don't have value (this, is, and), numbers,  and other unnecessary words that don't add value (as defined by us). 
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+corpus <- tm_map(corpus, content_transformer(tolower))
+
+corpus <- tm_map(corpus, stripWhitespace)
+corpus <- tm_map(corpus, removeNumbers)
+corpus <- tm_map(corpus, removeWords, stopwords("english"))
+corpus <- tm_map(corpus, removeWords, c("important", "kaggle", "somewhat", "useful", "yes", "etc", "often", "enough", "courses", "non", "nice", "laptop", "coursera", "year", "udemy", "run", "youtube", "socrata", "workstation", "online", "edx", "sometimes", "employed", "logistic", "male", "necessary", "company", "increased"))
+
+dtm <- DocumentTermMatrix(corpus)
+dtm2 <- as.matrix(dtm)
+
+
+frequency <- colSums(dtm2)
+frequency <- sort(frequency, decreasing=T)
+
+table <- head(frequency, 20)
+
+```
+
+##Wordcloud of top words from within our dataset.
+
+Wordclouds give a quick and easy display of our top words.  This allows us to quickly see which words are among the top for data science skills.
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+words <- names(frequency)
+wordcloud(words[1:100], frequency[1:100], 
+          colors=brewer.pal(8, "Dark2"))
+```
+
+#Analysis
+
+##Histogram of Frequent words
+
+Looking at the most frequent words, it seems that most data science skills from the kaggle survey relate to the following words:
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+wf <- data.frame(word=names(frequency), frequency=frequency)
+
+ggplot(subset(wf, frequency>5000), aes(x = reorder(word, -frequency), y = frequency)) +
+  geom_bar(stat = "identity", aes(fill= reorder(word, -frequency))) +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) + 
+  theme(legend.position="none") +
+  ylab("Frequency") +
+  xlab("Words") +
+  ggtitle("Most frequent words by count")
+```
+
+###Top 2 words (data and time) removed from dataset.  
+
+This allows us to subset the data and see more easily the variation between the top variables.
+```{r}
+ggplot(subset(wf, frequency>5000 & frequency < 20000), aes(x = reorder(word, -frequency), y = frequency)) +
+  geom_bar(stat = "identity", aes(fill= reorder(word, -frequency))) +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) + 
+  theme(legend.position="none") +
+  ylab("Frequency") +
+  xlab("Words") +
+  ggtitle("Most frequent words by count")
+```
+
+The data shows that potential employers would value some of the following skills: time (assuming time series), python, regression, machine learning, SQL.
+
+```{r}
+table <- head(wf, 20)
+kable(table, "html", escape = F) %>%
+  kable_styling("striped", full_width = T) %>%
+  row_spec(0, bold = T)
+```
