@@ -1,0 +1,240 @@
+---
+title:   "CUNY MSDS DATA 607 Project"
+author: "Amanda Arce"
+date: "October 1, 2018"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    smooth_scroll: true
+    theme: cosmo
+    highlight: pygments
+    number_sections: true
+    df_print: paged
+---
+
+# Project Question
+
+>W. Edwards Deming said, “In God we trust, all others must bring data.” Please use data to answer the question,“Which are the most valued data science skills?” Consider your work as an exploration; there is not necessarily a “right answer.”
+
+***
+
+#Group Members and Role:
+>All members of this group played a critical role, whether actively or passively, in all aspects of project implementation. However, listed below is the list of active roles undertaken by each member:
+
+ > 1. Juanelle Marks - 
+  2. Guang-
+  3. Amanda Arce -
+  4. Calvin Wong -
+  5. Vijay-
+  
+***
+#Project Implementation Approach
+
+> It is important to understand the concept,"Data Science" before lunging into exploring the 'most valued skills" associated with this term. This was the first step that was undertaken undertaken by this group.
+
+####Tools for Cummincation and Collaboration
+> The group agreed to conduct weekly meetings in Skype in order to facilitate discussions on project progress. These meetings were held as the need arose. Communication exchanges were also conducted using a Slack group. This  Slack group allowed for quick messaging and resource sharing (files, web links e.t.c). Code sharing and collaboration were done using github.
+
+####Project  Implementation Design
+>The project implementation design was based on an iterative model. 
+(have to do a diagram for this part)
+
+
+>The model incorporated the following activities:
+
+###### Analysis of Project Question:
+> We conducted meetings to breakdown and analyse project requirements. At the very core,relevant data which would assist in answering project question had to be sourced and gathered. 
+    
+######Data Sourcing and Gathering:
+ > Each group member was tasked with researching possible data sources (create excel sheet with list of data sources contributed by each group member; save in repo and hyperlink the words immediately before this parenthesis) and sharing these with the group.  Each  data source shared, was great for gathering data to draw conclusions on the most valued data science skills. The most ideal sources were: "Indeed.com", "Kaggle.com" and "Glassdoor". However, as a group, we were limited by the lack of persons with sufficient skills in webscraping. After much deliberation, we decided on the Kaggle Survey 2017 as our chief  data source for finding out, what the most valued data science skills are.
+     
+###### Tidying and Transforming
+> The dataset from the Kaggle survey was somewhat messy so some amount of tidying and transformation was needed. The tidying and transforming process included: subsetting/filtering  the dataset, gathering and spreading, removal of  irrelevant rows based on conditions, renaming variables,handling missing values. Tidying and transforming made it easier for desired analysis to be conducted.
+
+######  Analysisng and Visualising
+> This step followed  tidying and transforming. Various  summary statistics and visualisations were generated to aid the drawing of conclusions on what the most valued data science skills are.
+
+###### Findings
+
+## Libraries 
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(tm)
+library(wordcloud)
+library(knitr)
+library(kableExtra)
+library(reshape2)
+library(RSQLite)
+```
+
+
+
+#SQL Database
+
+##Create ephemeral in-memory RSQLite Database
+```{r}
+con <- dbConnect(RSQLite::SQLite(), "ML_Survey.sqlite" ,overwrite =TRUE )
+dbListTables(con)
+```
+
+##Load data from github into R
+```{r}
+df <-  read.csv(file = "https://raw.githubusercontent.com/mandiemannz/Data-607--Fall-18/master/multipleChoiceResponses.csv", header= TRUE)
+```
+
+##Sequence added to dataframe
+```{r}
+library(DT)
+# add sequence to the dataframe 
+#df<- tibble::rowid_to_column(df,) #Kept getting error,"row id already exists", every time i run this chunk
+df<-data.frame(df)
+dim(df)
+names(df)#original variables
+#datatable(df, options = list(pageLength = 15)) Works and is great for aesthetics, but will have to write code to do server side processing since dataset is too large for the client side hence not fully displayed.
+head(df,2)
+```
+
+
+
+```{r}
+#col_index <- c(1:15, 38:47,71:82,134,168:172,208:211)
+col_index<-c(1:4,7,9,14,37:49,57,66,67,76:77,79:172,197,202:205,207,208)# suggested columns which can  be used in the analysis phase of the project to draw conclusions on the top data scientist skills and why.  
+df2<-df[,col_index]
+names(df2) #extracted variables
+
+```
+
+
+
+```{r}
+dbWriteTable(con,  "MCR_Tb", df2, overwrite= T)
+dbListTables(con)
+```
+
+##Display Database tables
+```{r}
+dbListFields(con, "MCR_Tb")
+```
+
+###Display Database data
+```{r}
+display_cols <- dbReadTable(con, "MCR_Tb")
+dim(display_cols) # dimension of new dataframe
+#head(display_cols, 3)
+```
+
+
+
+```{r}
+dbDisconnect(con)
+```
+
+
+#Tidy/Clean Data
+
+```{r}
+#library(DT)
+dataskills <- display_cols
+#datatable(dataskills, options = list(pageLength = 15))
+head(dataskills,2)
+```
+
+
+```{r}
+library(DT)
+skills_US<-filter(dataskills, Country=="United States") ##select observations where country is United states only
+names(skills_US)
+#datatable(skills_US, options = list(pageLength = 15))
+head(skills_US,5)
+```
+
+Notes/Suggestions: Columns one to three gives some personal data each represented person in the dataset. A spread can be done on column four or we can rename the factor levels. Which would be better for the persons doing the analysis? Column five is yes or no categorical. Is this column needed for any analysis? Column five gives us a sense of the  job titles of the persons in our dataset. The information (do a count of the different job titles) under this variable can be used to add credibility to our findings. A visualisation of column seven can give us a picture/ranking of the recommended 'programming language' suggested by all participants in the data set. A gather can be done on columns 8 to 17. In these columns, 'learners' were asked their thoughts on how important the selected 9 skills and/or certifications were.To note, these respondents are not in industry.  We need to think about how the use  of these columns for analysis helps us answer our core question. Maybe we can posit that  even 'learners' recognise the value of  particular skillset, then show a visualisation of data from those columns.Column 21 gives data on the number of years respondents spent analysing data.  The data in this column can be used to validate our findings. We may have to use regular expressions to tidy that column. Columns 22 to 113 contains critical data for us.All respondents were asked question related to column 22 and 23, but only the coding workers were asked questions 24 to 113.These columns sets also have a lot of blanks. I wasn't able to come up with a tidying and transforming strategy. (Am hoping to schedule an appointment with Mr. Catlin for some guidance). Columns 114 to 119 gives data on the average time spent by coding workers to gather and clean data,select and build models,produce work,visualise data finding insights and communicating.Statiscal summaries can be done on these. Columns 121 to 124, identify tools used for sourcing, storing, sharing data and sharing code. These can be analysed to determine,knowlegde and skillsets  needed to be able to use certain tools in industry. Columns 125 and 126 relates to salary and currency type. Since we are only using US, we can remove column 126.
+
+
+
+##Create corpus from data
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+review_text <- paste(df, collapse=" ")
+review_source <- VectorSource(review_text)
+corpus <- Corpus(review_source)
+```
+
+
+##Text Mining: 
+
+Use text mining (TM) to extract count of words using a corpus.  Text Mining package also filters out "stop words" - words that don't have value (this, is, and), numbers,  and other unnecessary words that don't add value (as defined by us). 
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+corpus <- tm_map(corpus, content_transformer(tolower))
+
+corpus <- tm_map(corpus, stripWhitespace)
+corpus <- tm_map(corpus, removeNumbers)
+corpus <- tm_map(corpus, removeWords, stopwords("english"))
+corpus <- tm_map(corpus, removeWords, c("important", "kaggle", "somewhat", "useful", "yes", "etc", "often", "enough", "courses", "non", "nice", "laptop", "coursera", "year", "udemy", "run", "youtube", "socrata", "workstation", "online", "edx", "sometimes", "employed", "logistic", "male", "necessary", "company", "increased"))
+
+dtm <- DocumentTermMatrix(corpus)
+dtm2 <- as.matrix(dtm)
+
+
+frequency <- colSums(dtm2)
+frequency <- sort(frequency, decreasing=T)
+
+table <- head(frequency, 20)
+
+```
+
+##Wordcloud of top words from within our dataset.
+
+Wordclouds give a quick and easy display of our top words.  This allows us to quickly see which words are among the top for data science skills.
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+
+library(wordcloud)
+words <- names(frequency)
+wordcloud(words[1:100], frequency[1:100], 
+          colors=brewer.pal(8, "Dark2"))
+```
+
+#Analysis
+
+##Histogram of Frequent words
+
+Looking at the most frequent words, it seems that most data science skills from the kaggle survey relate to the following words:
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+library(ggplot2)
+wf <- data.frame(word=names(frequency), frequency=frequency)
+
+ggplot(subset(wf, frequency>5000), aes(x = reorder(word, -frequency), y = frequency)) +
+  geom_bar(stat = "identity", aes(fill= reorder(word, -frequency))) +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) + 
+  theme(legend.position="none") +
+  ylab("Frequency") +
+  xlab("Words") +
+  ggtitle("Most frequent words by count")
+```
+
+###Top 2 words (data and time) removed from dataset.  
+
+This allows us to subset the data and see more easily the variation between the top variables.
+```{r}
+ggplot(subset(wf, frequency>5000 & frequency < 20000), aes(x = reorder(word, -frequency), y = frequency)) +
+  geom_bar(stat = "identity", aes(fill= reorder(word, -frequency))) +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) + 
+  theme(legend.position="none") +
+  ylab("Frequency") +
+  xlab("Words") +
+  ggtitle("Most frequent words by count")
+```
+
+The data shows that potential employers would value some of the following skills: time (assuming time series), python, regression, machine learning, SQL.
+
+```{r}
+table <- head(wf, 20)
+kable(table, "html", escape = F) %>%
+  kable_styling("striped", full_width = T) %>%
+  row_spec(0, bold = T)
+```
+
+
+##Conclusions
+##Lessons Learned
