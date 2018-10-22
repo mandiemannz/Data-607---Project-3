@@ -1,0 +1,826 @@
+---
+title:   "CUNY MSDS DATA 607 Project"
+author: "Amanda Arce, Juanelle Marks, Vijaya Cherukuri, Guang Qiu, Calvin Wong, Saayed Alam"
+group name: "Group Future Data Scientists"
+date: "October 1, 2018"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    smooth_scroll: true
+    theme: cosmo
+    highlight: monochrome
+    number_sections: true
+    df_print: paged
+---
+
+#Introduction
+
+>According to Glassdoor, data scientist as a profession is ranked number 1 in the US for 2017 and has been for three years running. The median base salary paid in the field is $110,000 and there are 4,524 job openings in the US alone. Job indicators point to aggressive data growth as the increasing digitalization in all aspect of our lives produces vast amounts of data. In turn, private entities are seeing business opportunities abound and investing heavily into data infrastructure to process that data. This has led to the proliferation of data science work opportunities and demand is far outpacing supply of data science talent. By 2018, the United States alone may face a 50% to 60% gap in supply versus demand. Worldwide, the dynamic job market and demand for data science as a business driver is causing an estimated shortage of 190,000 data specialists by 2030.
+
+***
+
+# Project Question
+
+>W. Edwards Deming said, “In God we trust, all others must bring data.” Please use data to answer the question,“Which are the most valued data science skills?” Consider your work as an exploration; there is not necessarily a “right answer.”
+
+***
+
+#Group Members and Role:
+>All members of this group played a critical role, whether actively or passively, in all aspects of project implementation. However, listed below is the list of active roles undertaken by each member:
+
+ > 1. Juanelle Marks - Group Leader/Analysis
+   2. Guang Qiu - Data Transforming, Tidying, Debugging/ Analysis
+   3. Amanda Arce - Data Sourcer, Tidying and Transforming/Analysis
+   4. Calvin Wong - Data Visualizer/Analysis
+   5. Vijaya Cherukuri - Data Visualizer/Analysis
+   6. Saayed Alam - Data Tidying and Transforming/Analysis
+  
+***
+
+#Project Implementation Approach
+
+> It is important to understand the concept,"Data Science" before lunging into exploring the 'most valued skills" associated with this term. This was the first step that was  undertaken by this group.
+
+####Tools for Communication and Collaboration
+> The group agreed to conduct weekly meetings in Skype in order to facilitate discussions on project progress. These meetings were held as the need arose. Communication exchanges were also conducted using a Slack group. This  Slack group allowed for quick messaging and resource sharing (files, web links e.t.c). Code sharing and collaboration were done using github.
+
+#### Analysis of Project Question:
+> We conducted meetings to breakdown and analyse project requirements. At the very core,relevant data which would assist in answering project question had to be sourced and gathered. 
+
+####Data Sourcing and Gathering:
+ > Each group member was tasked with researching possible data sources (create excel sheet with list of data sources contributed by each group member; save in repo and hyperlink the words immediately before this parenthesis) and sharing these with the group.  Each  data source shared, was great for gathering data to draw conclusions on the most valued data science skills. The most ideal sources were: "Indeed.com", "Kaggle.com" and "Glassdoor". However, as a group, we were limited by the lack of persons with sufficient skills in webscraping. After much deliberation, we decided on the Kaggle Survey 2017 as our chief  data source for finding out, what the most valued data science skills are.
+ 
+####Data Description
+ >As part of the project requirements, our analysis is based on a Kaggle survey of individuals within data science of varying capacities. The survey contained 16,716 responses from 171 countries and territories. The respondents were found through Kaggle channels such as email lists, discussion forums, and social media. The aim of this industry-wide survey is to identify the state of data science and machine learning across the globe. Due to the wide interest of data science and the development of supporting technologies, the survey provided a comprehensive view of demographics, compensation, data languages and skillsets of a data scientist. 
+ 
+####Data Composition
+
+>This dataset schema is defined within a schema file provided by Kaggle https://www.kaggle.com/kaggle/kaggle-survey-2017#schema.csv
+https://www.kaggle.com/kaggle/kaggle-survey-2017#multipleChoiceResponses.csv
+
+>Here is a summary:
+
+>Columns – 290, Rows – 16,716
+
+>Respondents' answers to multiple choice and ranking questions. These questions are centered around demographics, skill, and compensation.
+
+####Tidying and Transforming
+> The dataset from the Kaggle survey was somewhat messy so some amount of tidying and transformation was needed. The tidying and transforming process included: subsetting/filtering  the dataset, gathering and spreading, removal of  irrelevant rows based on conditions, renaming variables,handling missing values. Tidying and transforming made it easier for desired analysis to be conducted.
+
+####Analysisng and Visualising
+> This step followed  tidying and transforming. Various  summary statistics and visualisations were generated to aid the drawing of conclusions on what the most valued data science skills are.
+
+####Project Implementation Goals
+> Our group will focus on two factors to determine the research question. First, how were skills ranked and second, how was salary impacted by skills.
+
+#####Qualitative
+>Goal: To determine how respondents ranked skill relevance
+
+>Our primary focus will be on how respondents replied to skill pertinence. We believe there is a direct correlation between skill relevance and perceived value of that skill. The dataset shows a large respondent demographic who reported freely on their skill usage. Therefore, we will analyze which of the skills garnered the highest ranking.
+>We will also consider corporate influence because a respondent may have to use a particular skill due to work reasons. Therefore, when factoring respondent skill usage, there could be a strong element of influence between working respondents and non-working respondents. 
+
+#####Quantitative
+>Goal: To determine the economic viability of a skill
+
+>We believe that conducting an analysis based on salary can produce a definitive conclusion on which skill sets are most valuable to a data scientist. Salary tends to be a sizeable expense for most organizations and economic potential will draw individuals to develop those abilities. Therefore, a high salary or earning would indicate high-interest levels of those skillsets. We believe that individuals pursuing skills in data science would align themselves with the economic opportunities available in the labor market. Therefore, this analysis framework will evaluate skillset relevancies based on salary in this point-in-time snapshot. 
+
+
+#Install libraries (options)
+
+```{r}
+#install.packages('NLP')
+#install.packages('slam')
+#install.packages("tm", repos="http://R-Forge.R-project.org")
+#install.packages("RSQLite")
+#install.packages("wordcloud")
+#install.packages('kableExtra')
+#install.packages('gridExtra')
+#install.packages('stats')
+#install.packages('DT')
+#install.packages('treemap')
+#install.packages("stringr")
+#install.packages('pandoc')
+```
+
+## Libraries 
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(tm)
+library(wordcloud)
+library(knitr)
+library(kableExtra)
+library(reshape2)
+library(RSQLite)
+library(gridExtra)
+library(stats)
+library(DT)
+library(ggplot2)
+library(treemap)
+library(stringr)
+```
+
+##Load source data into dataframe
+```{r}
+response <-  read.csv(file = "https://raw.githubusercontent.com/mandiemannz/Data-607--Fall-18/master/multipleChoiceResponses.csv", header= TRUE)
+schema <- read.csv(file ="https://raw.githubusercontent.com/dikepower/607_DataAcquisition_And_Management/master/Project3/kaggle-survey-2017/schema.csv", header = TRUE)
+```
+
+
+#Create SQL Database{.tabset}
+
+##Load dataframe into in-memory RSQLite Database
+```{r}
+#create connection to SQLite DB
+con <- dbConnect(RSQLite::SQLite(), "ML_Survey.sqlite" ,overwrite =TRUE )
+
+#dbListTables(con)
+```
+
+```{r}
+#choose selected columns for data based on the information from schema 
+#schema datafram info
+#str(schema)
+```
+
+##Subsetted database to df2
+```{r}
+#col_index <- c(1:15, 38:47,71:82,134,168:172,208:211)
+col_index<-c(1:4,7,9,14,37:49,57,66,67,76:77,79:172,197,202:205,207,208)# suggested columns which can  be used in the analysis phase of the project to draw conclusions on the top data scientist skills and why.  
+df2<-response[,col_index]
+#names(df2) #extracted variables
+```
+
+##Load data into SQLite
+
+```{r}
+dbWriteTable(con,  "MCR_Tb_Source", response, overwrite= T)
+dbWriteTable(con,  "MCR_Tb", df2, overwrite= T)
+dbWriteTable(con,  "MCR_Schema", schema, overwrite= T)
+dbListTables(con)
+```
+
+##Display Database tables
+```{r}
+dbListFields(con, "MCR_Tb")
+```
+
+###load data from SQL_lite Database data
+```{r}
+df<- dbReadTable(con, "MCR_Tb")
+dim(df) # dimension of new dataframe
+#head(display_cols, 3)
+```
+
+***
+#Analyses
+
+###Analysis 1
+
+####Demographics
+
+> It is apparant that technology is one of the key drivers of social and economic change. However, there is still a strong under-representation of women in technology. This observation is found to be true for the field of Data Science in the Kaggle survey as well. The Distribution of Gender graph shows four times as many male respondents to female. This could point to the lack of female participants due to the nature of this field.
+
+> The Distribution of Age graph shows a strong level of skewness towards younger respondents. This could be because Data Science as a field is relatively young. An overwhelming amount of respondents fall between the 20 to 35 year old mark. The graph peaks at 24 years of age with nearly 1000 respondents.
+
+> We can see that a higher percentage of respondents are employed. This accounts for more than half of all respondents combined. We can determine that Data Science as a career is stable even when factoring respondents who reside in less developed countries.
+
+```{r, fig.align="center", fig.width=6, fig.height=6, fig.cap="Figure1 Basic Informatin of Respondents"}
+
+#Calculates percentage of a column
+percentage = function(question, filteredData = df){
+  filteredData %>% 
+    drop_na(question)  %>%  # Remove nulls
+    group_by(!! (sym(question))) %>% 
+    summarise(count = n()) %>% # Count
+    mutate(percent = round((count / sum(count)) * 100, digits=2)) %>% # calculates percentage
+    arrange(desc(count))
+}
+#Apply percentage function to Gender
+gender <- percentage("GenderSelect") %>% filter(GenderSelect == "Male" | GenderSelect == "Female" )
+
+#Plot gender
+p1 <- ggplot(gender,aes(x= reorder(GenderSelect, -percent), y= percent, fill=GenderSelect)) + 
+  geom_bar(stat="identity", width=.5) +
+  labs(x="Gender",y="Percent",title="Distribution of Gender") + 
+  theme(legend.position="none") + 
+  theme(plot.title = element_text(hjust = 0.5))
+
+#Convert Age from char to num
+df$Age <- as.numeric(as.character(df$Age))
+
+#Remove null age values
+agedf <- df %>% 
+  filter(!Age == "") %>% 
+  select(Age)
+
+#Plot age
+p2 <- ggplot(agedf, aes(Age)) + 
+  geom_bar(fill = "#FF6666") + 
+  labs(x="Age",y="Respondents",title="Distribution of Age") +   
+  theme(legend.position="none") + 
+  theme(plot.title = element_text(hjust = 0.5))
+
+#Remove null employment values
+employmentdf <- df %>% 
+  filter(!EmploymentStatus == "") %>% 
+  select(EmploymentStatus)
+
+#Plot employment status
+p3 <- ggplot(employmentdf, aes(EmploymentStatus)) + 
+  labs(x="Category",y="Number of Respondents",title="Employment Status") +
+  geom_bar(fill = "#00BFC4") +
+  coord_flip()
+
+grid.arrange(arrangeGrob(p1,p2, ncol=2, nrow=1), arrangeGrob(p3, nrow=2), heights=c(1,2))
+
+#Combine
+```
+
+
+###Analysis 2
+
+####Job Skills
+
+>The dataset allowed for interesting insights on how respondents associated value to their skillsets. We analyzed how respondents viewed job skill importance versus what skills respondents recommended to aspiring scientists. The Job Skill Importance graph was developed through subsetting ten different columns and applying a count function. We determined which languages were used most and applied a normalizing method to rank them against each other. The data was counted as follows,
+
+| Category     | Points |
+|--------------|--------|
+| Necessary    | 2      |
+| Nice to have | 1      |
+| Unnecessary  | -1     |
+| Null         | 0      |
+
+>This method prioritizes respondents who ranked a certain language “Necessary” and modulated “Nice to have” & “Unnecessary” responses. As expected, the two main data science languages R and Python did not fare too far from each other in a job setting. We also determined that statistics, big data, and visualization are important job skill requirements. 
+
+>However, language requirements change quite drastically based on respondent responses. An overwhelming amount, more than double, respondents viewed Python as a more valuable skill compared to R. The other languages such as SQL, Matlab and Julia ranked much lower and negligible to our analysis.
+
+```{r}
+
+df_target <- df
+# Tidy JobSkillImportance* columns based on categories
+
+JobImportance <- function(skill)
+{  skill<- as.character(skill)
+if (skill=='Necessary')
+{
+    return (2)
+    
+}
+else if (skill=="Nice to have")
+{
+    return (1)
+}
+else if (skill=="Unnecessary")
+{
+    return (-1)
+    
+    
+}
+else 
+{
+    return (0)
+}
+}
+
+df_target$JobSkillImportanceBigData <- sapply(df_target$JobSkillImportanceBigData, JobImportance)
+df_target$JobSkillImportanceDegree <- sapply(df_target$JobSkillImportanceDegree, JobImportance)
+df_target$JobSkillImportanceStats <- sapply(df_target$JobSkillImportanceStats, JobImportance)
+df_target$JobSkillImportanceEnterpriseTools <- sapply(df_target$JobSkillImportanceEnterpriseTools, JobImportance)
+df_target$JobSkillImportancePython <- sapply(df_target$JobSkillImportancePython, JobImportance)
+df_target$JobSkillImportanceR <- sapply(df_target$JobSkillImportanceR, JobImportance)
+df_target$JobSkillImportanceSQL <- sapply(df_target$JobSkillImportanceSQL, JobImportance)
+df_target$JobSkillImportanceKaggleRanking <- sapply(df_target$JobSkillImportanceKaggleRanking, JobImportance)
+df_target$JobSkillImportanceMOOC <- sapply(df_target$JobSkillImportanceMOOC, JobImportance)
+df_target$JobSkillImportanceVisualizations <- sapply(df_target$JobSkillImportanceVisualizations, JobImportance)
+
+# Tidy gender variable
+
+GenderClean <- function(gender)
+{  skill<- as.character(gender)
+if (gender=='Female')
+{
+    return ('F')
+    
+}
+else if (gender=="Male")
+{
+    return ("M")
+}
+
+else 
+{
+    
+    return ("NA")
+}
+
+}
+df_target$GenderSelect <- sapply(df_target$GenderSelect, GenderClean)
+df_target$GenderSelect <- sapply(df_target$GenderSelect, factor)
+
+# Tidy employee status
+
+EmployeeClean <- function(emp)
+{  emp<- as.character(emp)
+if (emp=='Independent contractor, freelancer, or self-employed')
+{
+    return ('Self-employed')
+    
+}
+else if (emp=="Not employed, and not looking for work"|emp=="Not employed, but looking for work")
+{
+    return ("Unemployed")
+}
+else if (emp=="I prefer not to say")
+{
+    return ("NA")
+}
+else if (emp=="Employed full-time")
+{
+    return ("Full_Time")
+}
+else if (emp=="Employed part-time")
+{
+    return ("Part_Time")
+}
+else 
+{
+    
+    return (emp)
+}
+
+}
+df_target$EmploymentStatus <- sapply(df_target$EmploymentStatus, EmployeeClean)
+df_target$EmploymentStatus <- sapply(df_target$EmploymentStatus, factor)
+
+# Tidy column name
+
+JobskillImportance <-  df_target %>% 
+    select (starts_with("Jobs")) %>% select (c(1:9)) 
+JobskillImportance<- tibble::rowid_to_column(JobskillImportance, "ID") 
+names(JobskillImportance) <- sub ("JobSkillImportance" , "", names(JobskillImportance))
+
+```
+
+```{r}
+#Visualization of JobSkillImportance
+
+gather_p4 <- JobskillImportance %>% gather (JobSkill, Rate, 2:9)%>% select(ID,JobSkill, Rate)
+ 
+plot4 <- ggplot(gather_p4, aes(JobSkill, Rate))
+plot4 +stat_summary(fun.y=sum,geom = "bar", aes(fill =JobSkill  ), position = position_stack(reverse= TRUE)) + coord_flip()
+
+```
+
+
+
+
+```{r}
+
+# Tidy language recommended
+LanguageClean <- function(skill)
+{  skill<- as.character(skill)
+if (skill=='')
+{
+    return ('Not Specific')
+    
+}
+else if (skill=="Other")
+{
+    return ('Not Specific')
+}
+
+else 
+{
+    return (skill)
+}
+}
+
+df_target$LanguageRecommendationSelect <- sapply(df_target$LanguageRecommendationSelect , LanguageClean)
+ 
+levels(df_target$LanguageRecommendationSelect)[1] <- "Not specified"
+
+# Visualization
+p5 <- df_target %>% 
+        group_by(LanguageRecommendationSelect,GenderSelect) %>% 
+        summarise(n=n()) %>% 
+        arrange(desc(n)) 
+
+p5 %>% ggplot(aes(x=reorder(LanguageRecommendationSelect,-n),n)) +
+        geom_bar(aes(fill = GenderSelect),stat = 'identity') + 
+        theme_minimal() +
+        theme(axis.text.x = element_text(angle = 60, hjust = 1))+ xlab("LanguageRecomendation")+ ylab('Total Number of Respondents')
+
+```
+***
+
+###Analysis 3- Part A
+
+####Comparison of learners and code writers responses
+
+>Learners were given a non-exhaustive list with key data scientists job skills. Below is a table that shows how each skill was ranked by learners. This gives us some insight into how important these data scientists skills were perceived by learners.
+
+######Learners reponse on  rank of jobskill importance
+
+```{r}
+
+library(dplyr)
+rank_by_learners<- select(df2, starts_with("JobSkillImportance")) #select those columns in the dataset where learners ranked the importance of having certain data science skills.
+#rank_by_learners
+
+#Create tables to show count of each skill
+bigdata<-table(rank_by_learners$JobSkillImportanceBigData)
+stats<-table(rank_by_learners$JobSkillImportanceStats)
+enterpriseTools<-table(rank_by_learners$JobSkillImportanceEnterpriseTools)
+python<-table(rank_by_learners$JobSkillImportancePython)
+R<-table(rank_by_learners$JobSkillImportanceR)
+sql<-table(rank_by_learners$JobSkillImportanceSQL)
+visualisations<-table(rank_by_learners$JobSkillImportanceVisualizations)
+
+Skills<-as.data.frame(rbind(bigdata,stats,enterpriseTools,python,R,sql,visualisations))# combine tables
+Skills<-Skills%>%rownames_to_column("Skill_Name") # change row names to column
+
+colnames(Skills)[colnames(Skills)=="V1"] <- "Missing_Values"  #rename3 column two
+
+Skills
+
+```
+
+####Visualising this information
+
+> Now that we have tabulated the skills, we will view a visualisation of this information to gain a clearer picture.
+
+```{r}
+#Use of a barplot to visualise data. since this was diplayed earlier, this will not be shown now.
+Skills_df<-Skills%>%gather(key =Importance, value = Count, c(3:4))
+#Skills
+g<-ggplot(Skills_df,aes(x= Skill_Name, y =Count)) + geom_bar(stat = "identity",aes(fill = Importance), position = position_stack(reverse= TRUE)) + coord_flip()
+#g
+```
+
+
+```{r, echo= FALSE}
+Skills1<-select(Skills,"Skill_Name","Necessary","Nice to have", "Unnecessary")
+necessary<-select(Skills1,"Skill_Name","Necessary")# subset the variable necessary
+#necessary
+necessary%>%
+         #  arrange(necessary)%>%
+           mutate(Skill_Name=factor(Skill_Name,Skill_Name))%>%
+           ggplot(aes(x=Skill_Name,y=Necessary)) +
+         geom_bar(stat="identity", aes(fill= Skill_Name)) +
+          coord_flip()  +
+         theme(
+          panel.grid.minor.y = element_blank(),
+         panel.grid.major.y = element_blank(),
+            legend.position = "none"
+          ) +
+          ylab("Count")
+
+```
+
+> The diagram above shows that the learners' group in the survey ranked 'Python" as the most important skill needed in getting a data scientist job.
+
+######Code writers reponse on skill frequency use on the job -Frequently used data science/analytic tools, technologies and languages over the past year.
+
+>Another group in the survey was labelled coding workers. These were persons who write code on a regular basis. They were given a list of tools used by datascientists and were asked to indicate the frequency with which they use these tools on the job.
+
+```{r, echo=FALSE}
+rank_by_tools<- select(df2, starts_with("WorkToolsFrequency")) #subset columns with responses on work tool frequency
+#glimpse(rank_by_tools)
+
+#create tables to show count of each category of response
+amazon_ML<-table(rank_by_tools$WorkToolsFrequencyAmazonML)
+AWS<-table(rank_by_tools$WorkToolsFrequencyAWS)
+Angoss<-table(rank_by_tools$WorkToolsFrequencyAngoss)
+C<-table(rank_by_tools$WorkToolsFrequencyC)
+Cloudera<-table(rank_by_tools$WorkToolsFrequencyCloudera)
+Data_Robot<-table(rank_by_tools$WorkToolsFrequencyDataRobot)
+Flume<-table(rank_by_tools$WorkToolsFrequencyFlume)
+GCP<-table(rank_by_tools$WorkToolsFrequencyGCP)
+Hadoop<-table(rank_by_tools$WorkToolsFrequencyHadoop)
+IBM_Cognos<-table(rank_by_tools$WorkToolsFrequencyIBMCognos)
+SPSS_Modeler<-table(rank_by_tools$WorkToolsFrequencyIBMSPSSModeler)
+SPSS_Satistics<-table(rank_by_tools$WorkToolsFrequencyIBMSPSSStatistics)
+Watson<-table(rank_by_tools$WorkToolsFrequencyIBMWatson)
+Impala<-table(rank_by_tools$WorkToolsFrequencyImpala)
+Java<-table(rank_by_tools$WorkToolsFrequencyJava)
+Julia<-table(rank_by_tools$WorkToolsFrequencyJulia)
+Jupyter<-table(rank_by_tools$WorkToolsFrequencyJupyter)
+KNIME_C<-table(rank_by_tools$WorkToolsFrequencyKNIMECommercial)
+KNIME_F<-table(rank_by_tools$WorkToolsFrequencyKNIMEFree)
+Mathematica<-table(rank_by_tools$WorkToolsFrequencyMathematica)
+MATLAB<-table(rank_by_tools$WorkToolsFrequencyMATLAB)
+Azure<-table(rank_by_tools$WorkToolsFrequencyAzure)
+Excel<-table(rank_by_tools$WorkToolsFrequencyExcel)
+R_Server<-table(rank_by_tools$WorkToolsFrequencyMicrosoftRServer)
+MS_SQL<-table(rank_by_tools$WorkToolsFrequencyMicrosoftSQL)
+Minitab<-table(rank_by_tools$WorkToolsFrequencyMinitab)
+Oracle<-table(rank_by_tools$WorkToolsFrequencyOracle)
+NOSQL<-table(rank_by_tools$WorkToolsFrequencyNoSQL)
+Orange<-table(rank_by_tools$WorkToolsFrequencyOrange)
+Perl<-table(rank_by_tools$WorkToolsFrequencyPerl)
+Python<-table(rank_by_tools$WorkToolsFrequencyPython)
+Qlik<-table(rank_by_tools$WorkToolsFrequencyQlik)
+R<-table(rank_by_tools$WorkToolsFrequencyR)
+RapidMiner_C<-table(rank_by_tools$WorkToolsFrequencyRapidMinerCommercial)
+RapidMiner_F<-table(rank_by_tools$WorkToolsFrequencyRapidMinerFree)
+SAS_Base<-table(rank_by_tools$WorkToolsFrequencySASBase)
+Salfrod<-table(rank_by_tools$WorkToolsFrequencySalfrod)
+SAS_E<-table(rank_by_tools$WorkToolsFrequencySASEnterprise)
+SAS_JMP<-table(rank_by_tools$WorkToolsFrequencySASJMP)
+SPARK<-table(rank_by_tools$WorkToolsFrequencySpark)
+SQL<-table(rank_by_tools$WorkToolsFrequencySQL)
+STAN<-table(rank_by_tools$WorkToolsFrequencyStan)
+Statistica<-table(rank_by_tools$WorkToolsFrequencyStatistica)
+Tableau<-table(rank_by_tools$WorkToolsFrequencyTableau)
+Tensorflow<-table(rank_by_tools$WorkToolsFrequencyTensorFlow)
+TIBCO<-table(rank_by_tools$WorkToolsFrequencyTIBCO)
+Unix<-table(rank_by_tools$WorkToolsFrequencyUnix)
+tools_select1<-table(rank_by_tools$WorkToolsFrequencySelect1)
+
+```
+
+
+```{r, echo= FALSE}
+#Combine tables
+Frequent_tools<-as.data.frame(rbind(amazon_ML,AWS,Angoss,C, Cloudera,Data_Robot,Flume,GCP,Hadoop,IBM_Cognos,SPSS_Modeler,SPSS_Satistics,Watson,Impala,Java,Julia,Jupyter,KNIME_C,KNIME_F,Mathematica,MATLAB,Azure,Excel,R_Server,MS_SQL,Minitab,Oracle,NOSQL,Orange,Perl,Python,Qlik,R,RapidMiner_C,RapidMiner_F,SAS_Base,SAS_E,SAS_JMP,SPARK,SQL,STAN,Statistica,Tableau,Tensorflow,TIBCO,Unix))
+
+Frequent_tools<-Frequent_tools%>%rownames_to_column("Tool")
+colnames(Frequent_tools)[colnames(Frequent_tools)=="V1"] <- "Missing_Values" 
+```
+
+####Visualising responses by code writers on most frequently used tool
+
+######Visualisation One
+```{r, echo= FALSE}
+
+tool_frequency<-select(Frequent_tools,"Tool","Most of the time")# subset the variable Most of the time
+names(tool_frequency)<-c("Tool", "Most_Time") #rename column two
+
+tool_frequency1<-tool_frequency %>%
+  arrange(Most_Time) %>%
+  #mutate(CTool=factor(Tool, Tool)) %>%
+  ggplot( aes(x=Tool, y=Most_Time) ) +
+    geom_segment( aes(x=Tool ,xend=Tool, y=0, yend=Most_Time), color="red") +
+    geom_point(size=2, color="#69b3a2") +
+    coord_flip() +
+    theme(
+      panel.grid.minor.y = element_blank(),
+      panel.grid.major.y = element_blank(),
+      legend.position="none"
+    ) +
+    xlab("")
+    tool_frequency1
+```
+
+######Visualisation Two
+```{r, echo= FALSE}
+
+library(treemap)
+
+# Plot
+tool_frequency2<-treemap(tool_frequency,
+            
+            # data
+            index="Tool",
+            vSize="Most_Time",
+            type="index",
+            
+            # Main
+            title="",
+            palette="Dark2",
+
+            # Borders:
+            border.col=c("black"),             
+            border.lwds=1,                         
+        
+            # Labels
+            fontsize.labels=0.5,
+            fontcolor.labels="white",
+            fontface.labels=1,            
+            bg.labels=c("transparent"),              
+            align.labels=c("left", "top"),                                  
+            overlap.labels=0.5,
+            inflate.labels=T                        # If true, labels are bigger when rectangle is bigger.
+
+            
+            )
+```
+
+> Both the lollipop chart and the tree diagram above shows that "PYTHON" was ranked as the most frequently used tool by the code writers in the survey.
+
+#####Summary of findings of Analysis 3
+>It is interesting to note that both learners and code writers in the survey identified knowledge and competency in the programming language PYTHON as a very valuable data scientist skill. From their responses we can conclude that PYTHON is the most valued skill.
+
+> However, this dataset also reveals some other skills that are very higly valuable for data scientists to have.Two of these are examined in Analysis 3 part B>
+
+###Analysis 3- Part B
+> This part examines a list of data scientists' work methods to reveal the frequency with which code writers in the data set used these methods on the job. This is important to find out as it will indicate what valued methods should be part of a datascientist's skillsets.
+
+#####Frequently used data science methods
+>Code writers in the survey were asked the frequency with which they used the various data science methods. The treemap below gives a visualisation of how each method ranked.
+
+```{r, echo= FALSE}
+rank_by_methods<- select(df2, starts_with("WorkMethodsFrequency"))
+#glimpse(rank_by_methods)
+#create tables to show count of each category of response
+Ab_Testing<-table(rank_by_methods$WorkMethodsFrequencyA.B)
+Association_Rules<-table(rank_by_methods$WorkMethodsFrequencyAssociationRules)
+Bayesian<-table(rank_by_methods$WorkMethodsFrequencyBayesian)
+CNN<-table(rank_by_methods$WorkMethodsFrequencyBayesian)
+Collaborative_Filtering<-table(rank_by_methods$WorkMethodsFrequencyCollaborativeFiltering)
+Cross_Validation<-table(rank_by_methods$WorkMethodsFrequencyCross.Validation)
+Data_Visualisation<-table(rank_by_methods$WorkMethodsFrequencyDataVisualization)
+Decision_trees<-table(rank_by_methods$WorkMethodsFrequencyDecisionTrees)
+Ensemble_methods<-table(rank_by_methods$WorkMethodsFrequencyEnsembleMethods)
+Evolutionary_approaches<-table(rank_by_methods$WorkMethodsFrequencyEvolutionaryApproaches)
+GANs<-table(rank_by_methods$WorkMethodsFrequencyGANs)
+GBMs<-table(rank_by_methods$WorkMethodsFrequencyGBM)
+HMMs<-table(rank_by_methods$WorkMethodsFrequencyKNN)
+Lift_Analysis<-table(rank_by_methods$WorkMethodsFrequencyLiftAnalysis)
+Logistic_Regression<-table(rank_by_methods$WorkMethodsFrequencyLogisticRegression)
+MLN<-table(rank_by_methods$WorkMethodsFrequencyMLN)
+Naive_Bayes<-table(rank_by_methods$WorkMethodsFrequencyNaiveBayes)
+NLP<-table(rank_by_methods$WorkMethodsFrequencyNLP)
+Nueral_Networks<-table(rank_by_methods$WorkMethodsFrequencyNeuralNetworks)
+PCA<-table(rank_by_methods$WorkMethodsFrequencyPCA)
+Prescriptive_modeling<-table(rank_by_methods$WorkMethodsFrequencyPrescriptiveModeling)
+Random_Forests<-table(rank_by_methods$WorkMethodsFrequencyRandomForests)
+Recommender_Systems<-table(rank_by_methods$WorkMethodsFrequencyRecommenderSystems)
+RNNs<-table(rank_by_methods$WorkMethodsFrequencyRNNs)
+Segmentation<-table(rank_by_methods$WorkMethodsFrequencySegmentation)
+Simulation<-table(rank_by_methods$WorkMethodsFrequencySimulation)
+SVMs<-table(rank_by_methods$WorkMethodsFrequencySVMs)
+Text_Analysis<-table(rank_by_methods$WorkMethodsFrequencyTextAnalysis)
+timeseries_analysis<-table(rank_by_methods$WorkMethodsFrequencyTimeSeriesAnalysis)
+
+
+```
+
+
+```{r, echo=FALSE}
+#Combine tables
+Frequent_methods<-as.data.frame(rbind(Ab_Testing,Association_Rules,Bayesian,CNN,Collaborative_Filtering,Cross_Validation,Data_Visualisation,Decision_trees,Ensemble_methods,Evolutionary_approaches,GANs,GBMs,HMMs,Lift_Analysis,Logistic_Regression,MLN,Naive_Bayes,NLP,Nueral_Networks,PCA,Prescriptive_modeling,Random_Forests,Recommender_Systems,RNNs,Segmentation,Simulation,SVMs,Text_Analysis,timeseries_analysis))
+
+Frequent_methods<-Frequent_methods%>%rownames_to_column("Methods")
+colnames(Frequent_methods)[colnames(Frequent_methods)=="V1"] <- "Missing_Values" 
+Frequency_methods<-select(Frequent_methods,"Methods","Most of the time")# subset the variable: Most of the time
+names(Frequency_methods)<-c("Methods", "Most_Time") #rename column two
+#Frequency_methods
+```
+
+
+####Visualisation  of code writers responses on  work frequency of data science methods
+```{r, echo= FALSE}
+library(treemap)
+Frequency_methods1<-treemap(Frequency_methods,
+            
+           
+            index="Methods",
+            vSize="Most_Time",
+            type="index",
+            
+            # Main
+            title="",
+            palette="Dark2",
+
+            # Borders:
+            border.col=c("black"),             
+            border.lwds=1,                         
+        
+            # Labels
+            fontsize.labels=0.5,
+            fontcolor.labels="white",
+            fontface.labels=1,            
+            bg.labels=c("transparent"),              
+            align.labels=c("left", "top"),                                  
+            overlap.labels=0.5,
+            inflate.labels=T                        
+
+            
+            )
+
+```
+>The treemap above shows that data visualisation was the most often used data science method. It can thus be said that among the most valued skills, data scientists should have, being able to do data visualisations is extremely critical.
+
+###Analysis 3- Part C
+>Finally, code writers were asked to indicate the average amount of time that is devoted to aspects of their data science work.  Below is a  visualisation of their responses.
+
+
+```{r}
+rank_by_time<- select(df2, starts_with("Time"))
+rank_by_time2<-rank_by_time %>% gather(key = Activity, value = Hours, c(1:5))%>% select (Activity, Hours)  
+rank_by_time2 <- subset(rank_by_time2, (!is.na(rank_by_time2['Hours'])))
+#summary(rank_by_time2)
+
+p <- ggplot(rank_by_time2, aes(Activity, Hours))
+p +geom_bar(stat = "identity",position=position_dodge(), aes(fill='red'))+xlab('Tasks')+ylab('Average Hours')
+ 
+```
+
+>The visualisation above shows that data scientists devoted most of their hours to  finding insights as compared with the other activities.
+
+###Conclusion based on Analysis 3
+>Base on all the anlysis conducted for analysis three, it can be concluded that python, data visualisation and and finding insights are among the most valued skills that data scientists should possess.
+
+***
+
+```{r}
+#library(DT)
+#skills_US<-filter(dataskills, Country=="United States") ##select observations where country is United states only
+#names(skills_US)
+#datatable(skills_US, options = list(pageLength = 15))
+#head(skills_US,5)
+```
+
+
+###Text Mining: 
+
+Use text mining (TM) to extract count of words using a corpus.  Text Mining package also filters out "stop words" - words that don't have value (this, is, and), numbers,  and other unnecessary words that don't add value (as defined by us). 
+
+```{r}
+# Install
+#install.packages("tm")  # for text mining
+#install.packages("SnowballC") # for text stemming
+#install.packages("wordcloud") # word-cloud generator 
+#install.packages("RColorBrewer") # color palettes
+# Load
+library("tm")
+library("SnowballC")
+library("wordcloud")
+library("RColorBrewer")
+```
+
+##Create corpus from data
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+review_text <- paste(df$LanguageRecommendationSelect, collapse=" ")
+review_source <- VectorSource(review_text)
+corpus <- Corpus(review_source)
+
+```
+
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+
+corpus <- tm_map(corpus, content_transformer(tolower))
+corpus <- tm_map(corpus, stripWhitespace)
+corpus <- tm_map(corpus, removeNumbers)
+corpus <- tm_map(corpus, removeWords, stopwords("english"))
+corpus <- tm_map(corpus, removeWords, c("important", "kaggle", "somewhat", "useful", "yes", "etc", "often", "enough", "courses", "non", "nice", "laptop", "coursera", "year", "udemy", "run", "youtube", "socrata", "workstation", "online", "edx", "sometimes", "employed", "logistic", "male", "necessary", "company", "increased"))
+dtm <- DocumentTermMatrix(corpus)
+dtm2 <- as.matrix(dtm)
+frequency <- colSums(dtm2)
+frequency <- sort(frequency, decreasing=T)
+frequency
+#table <- head(frequency, 20)
+
+```
+
+##Wordcloud of top words from within our dataset.
+
+Wordclouds give a quick and easy display of our top words.  This allows us to quickly see which words are among the top for data science skills.
+
+##Build a term-document matrix
+```{r}
+dtm <- TermDocumentMatrix(corpus)
+m <- as.matrix(dtm)
+v <- sort(rowSums(m),decreasing=TRUE)
+d <- data.frame(word = names(v),freq=v)
+head(d, 10)
+```
+
+
+##Generate the Word cloud
+```{r}
+set.seed(1234)
+wordcloud(words = d$word, freq = d$freq, min.freq = 1,
+          max.words=200, random.order=FALSE, rot.per=0.35, 
+          colors=brewer.pal(8, "Dark2"))
+```
+
+>After running this analysis we determined that python is the recommended language.
+
+# Overall Conclusion
+
+>The benefits of addressing the gender gap and encouraging more women to enter into technology is obvious. The economic ramifications of including more women into the data science sector is significant. In a research done by European Commission, encouraging women to fill more roles in technology will raise EU's GDP by 9 Billion euros a year.
+
+>In an analysis of more than 330,000 U.S. employee and candidate survey data, new research from analytics platform Visier found that Silicon Valley appears to be ageist in its hiring practices. In Technology, older workers are more likely to be passed over than their younger counterparts. Therefore, it makes sense then that the average tech worker is under 40 years of age. Visier found that the average tech worker is 38 years old, a number that’s five years younger than the average workers in other industries.
+
+>Data is the new corporate currency, as advancing digitisation sweeps every horizontal and vertical market throughout the world. The impact on the data science sector is far-reaching and, as a result, a range of new roles and skillsets are in demand. The long term career potential is high even in less developed countries.
+
+>Although respondents used Python and R nearly equal in a job setting, a majority of respondents recommended Python as an important skill to have for the future. There is two times more respondents who recommended Python to R. We believe this divide may not be noticable within the corporate world, however, very apparent from the user level.
+
+##Lessons Learned
+
+>Will be provided during the oral presentation.
+
+##Cited Works
+
+https://insidebigdata.com/2018/08/19/infographic-data-scientist-shortage/
+https://www.kaggle.com/mhajabri/what-do-kagglers-say-about-data-science?scriptVersionId=2658373
+https://www.weforum.org/agenda/2018/01/close-the-tech-gender-gap-gillian-tans/
+https://www.forbes.com/sites/louiscolumbus/2018/01/29/data-scientist-is-the-best-job-in-america-according-glassdoors-2018-rankings/#4bf3149c5535
+https://www.theladders.com/career-advice/older-tech-workers-fear-age-discrimination
+
